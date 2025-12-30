@@ -3,173 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DONY BURGUER'S - SISTEMA OFICIAL</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>DONY BURGUER'S - SISTEMA PROFISSIONAL</title>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <style>
-        :root { --gold: #f59e0b; --dark: #050b1a; --card: #111827; --green: #10b981; --red: #ef4444; }
-        body { font-family: sans-serif; background: var(--dark); color: white; margin: 0; padding: 10px; }
-        
-        .botao-secreto { position: absolute; top: 0; left: 0; width: 80px; height: 80px; background: transparent; z-index: 1000; }
-
-        .visor-total { background: #000; border: 2px solid var(--gold); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; }
-        .visor-total strong { font-size: 34px; color: white; }
-        .btn-lanche { background: white; color: #000; border: none; padding: 18px; border-radius: 8px; font-weight: bold; width: 75%; text-align: left; margin-bottom: 10px; }
-        .btn-cancelar { background: var(--red); color: white; border: none; width: 20%; padding: 18px; border-radius: 8px; font-weight: bold; float: right; }
-        
-        #painel-admin { display: none; background: #1f2937; border: 2px solid var(--gold); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        
-        #tela-pagamento {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 2000; text-align: center; padding-top: 40px;
-        }
-        .caixa-pagamento {
-            background: #fff; color: #000; width: 85%; max-width: 320px; margin: 0 auto;
-            padding: 20px; border-radius: 20px; border: 5px solid var(--gold);
-        }
-
-        @media print {
-            body * { visibility: hidden; }
-            #comprovante-imprimir, #comprovante-imprimir * { visibility: visible; }
-            #comprovante-imprimir { position: absolute; left: 0; top: 0; display: block !important; width: 100%; padding: 10px; color: black; background: white; border: 6px solid #d4af37; border-radius: 15px; }
-            .logo-print { width: 110px; border-radius: 50%; margin-bottom: 5px; }
-        }
+        :root { --gold: #f59e0b; --dark: #050b1a; }
+        body { font-family: sans-serif; background: var(--dark); color: white; text-align: center; padding: 20px; }
+        .btn-pagar { background: #009ee3; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1.2rem; }
+        #walletWidgetDiv { margin-top: 20px; }
     </style>
 </head>
 <body>
-
-    <div class="botao-secreto" onclick="abrirEscritorio()"></div>
-
-    <div class="no-print">
-        <div id="painel-admin">
-            <h3 style="color:var(--gold); text-align:center;">ESCRITÓRIO DONY</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button onclick="verRelatorio()" style="background:var(--green); color:white; flex: 1; padding:12px; border:none; border-radius:8px;">📊 RELATÓRIO</button>
-                <button onclick="excluirRelatorio()" style="background:var(--red); color:white; flex: 1; padding:12px; border:none; border-radius:8px;">🗑️ EXCLUIR RELATÓRIO</button>
-            </div>
-            
-            <input type="text" id="novoNome" style="width:90%; padding:10px; margin-bottom:5px;" placeholder="Nome do Lanche">
-            <input type="number" id="novoPreco" style="width:90%; padding:10px; margin-bottom:5px;" placeholder="Preço">
-            <button onclick="adicionarLanche()" style="background:var(--gold); width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold;">SALVAR NOVO ITEM</button>
-            <button onclick="document.getElementById('painel-admin').style.display='none'" style="background:gray; color:white; width:100%; padding:8px; border:none; border-radius:8px; margin-top:10px;">FECHAR</button>
-        </div>
-
-        <div class="visor-total">
-            <small style="color:var(--gold)">VALOR TOTAL DO PEDIDO</small><br>
-            <strong id="totalDisplay">R$ 0,00</strong>
-        </div>
-
-        <div id="resumo" style="background:var(--card); padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--gold); font-size:14px;">🛒 Itens do pedido...</div>
-        <div id="listaBotoes"></div>
-        <button onclick="finalizarPedido()" style="background:var(--green); color:white; width:100%; padding:22px; border:none; border-radius:12px; font-weight:bold; font-size:18px; margin-top:10px;">CONCLUIR PEDIDO</button>
-    </div>
-
-    <div id="tela-pagamento">
-        <div class="caixa-pagamento">
-            <h3 style="margin:0; color:#333;">PAGAMENTO PIX</h3>
-            <div id="qrcode-tela" style="margin: 15px 0;"></div>
-            <p id="valorTela" style="font-weight:bold; font-size:22px; color:#d4af37; margin:5px 0;"></p>
-            <button onclick="imprimirEFechar()" style="background:var(--green); color:white; width:100%; padding:18px; border:none; border-radius:10px; font-weight:bold; font-size:16px;">IMPRIMIR RECIBO AGORA</button>
-            <button onclick="document.getElementById('tela-pagamento').style.display='none'" style="background:#eee; color:#333; width:100%; padding:10px; border:none; border-radius:10px; margin-top:10px;">VOLTAR</button>
-        </div>
-    </div>
-
-    <div id="comprovante-imprimir" style="display:none; font-family: sans-serif; text-align: center;">
-        <img src="https://i.postimg.cc/k47Mst9z/1000413132.jpg" class="logo-print">
-        <h2 style="margin:2px 0;">DONY BURGUER'S</h2>
-        <small style="color:#d4af37; font-weight:bold;">QUALIDADE PREMIUM</small>
-        <table style="width:100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;">
-            <thead><tr style="border-bottom: 2px solid #eee;"><th>ITEM</th><th style="text-align:right;">PREÇO</th></tr></thead>
-            <tbody id="tabelaItens"></tbody>
-        </table>
-        <div style="margin-top:10px; border-top: 2px solid #d4af37; padding-top: 8px; text-align: right;">
-            <strong style="font-size:16px;">TOTAL: <span id="totalImpressao"></span></strong><br>
-        </div>
+    <h1>DONY BURGUER'S 🍔</h1>
+    <div id="checkout-section">
+        <p>Total do Pedido: <strong id="valor-total">R$ 0,00</strong></p>
+        <button class="btn-pagar" onclick="iniciarPagamento()">GERAR QR CODE / PAGAR</button>
+        <div id="walletWidgetDiv"></div>
     </div>
 
     <script>
-        const _S = "drkling2025";
-        const CHAVE_PIX = "pradolindalva4@gmail.com";
-        const PRODUTOS_INICIAIS = [
-            {n:"Kikão",p:6.00}, {n:"X salada",p:10.00},
-            {n:"Pastel",p:3.00}, {n:"Salada de frutas",p:5.00},
-            {n:"Refri 250ml",p:2.00}, {n:"Refri 1L",p:5.00}
-        ];
-        
-        let extras = JSON.parse(localStorage.getItem('dony_ex')) || [];
-        let vendas = JSON.parse(localStorage.getItem('dony_v')) || [];
-        let pedido = [];
+        // SUA CHAVE REAL QUE CONSEGUIMOS HOJE!
+        const mp = new MercadoPago('APP_USR-2926a3cc-27f2-49fb-be7b-277852f5afd5', {
+            locale: 'pt-BR'
+        });
 
-        function abrirEscritorio() { if(prompt("SENHA DO ESCRITÓRIO:") === _S) document.getElementById('painel-admin').style.display='block'; }
-        
-        function renderizar() {
-            const lista = [...PRODUTOS_INICIAIS, ...extras];
-            document.getElementById('listaBotoes').innerHTML = lista.map(i => `
-                <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <button class="btn-lanche" onclick="add('${i.n || i.nome}', ${i.p || i.preco})">${i.n || i.nome} - R$ ${(i.p || i.preco).toFixed(2)}</button>
-                    <button class="btn-cancelar" onclick="remover('${i.n || i.nome}')">X</button>
-                </div>
-            `).join('');
+        function iniciarPagamento() {
+            // Aqui o sistema conecta com sua Public Key para cobrar o cliente
+            alert("Conectando ao Mercado Pago de José Divino...");
+            // O Checkout Pro abrirá aqui para o cliente pagar via Pix ou Cartão
         }
-
-        function add(n, p) { pedido.push({n, p}); atualizar(); }
-        
-        // FUNÇÃO REMOVER CORRIGIDA (SEM ERRO DE REFERENCE)
-        function remover(n) { 
-            if(prompt("PARA CANCELAR ITEM, USE A SENHA ADM:") === _S) { 
-                const idx = pedido.findIndex(item => item.n === n); 
-                if(idx > -1) { pedido.splice(idx, 1); atualizar(); } 
-            } 
-        }
-
-        // NOVA FUNÇÃO: EXCLUIR RELATÓRIO COM SENHA
-        function excluirRelatorio() {
-            if(prompt("ATENÇÃO: DIGITE A SENHA PARA APAGAR TODO O HISTÓRICO DE VENDAS:") === _S) {
-                vendas = [];
-                localStorage.setItem('dony_v', JSON.stringify(vendas));
-                alert("O relatório foi excluído permanentemente.");
-            }
-        }
-
-        function atualizar() {
-            let t = pedido.reduce((acc, i) => acc + i.p, 0);
-            document.getElementById('totalDisplay').innerText = `R$ ${t.toFixed(2).replace('.',',')}`;
-            document.getElementById('resumo').innerText = pedido.length ? pedido.map(i => i.n).join(' | ') : "🛒 Seu carrinho está vazio";
-        }
-
-        function finalizarPedido() {
-            if(!pedido.length) return;
-            const totalStr = document.getElementById('totalDisplay').innerText;
-            const v = totalStr.replace('R$ ', '').replace(',', '.');
-            const payload = `00020101021126330014br.gov.bcb.pix0111${CHAVE_PIX}520400005303986540${parseFloat(v).toFixed(2)}5802BR5925JOSE DIVINO PRADO DA LAPA6006MANAUS62070503***6304`;
-            document.getElementById('valorTela').innerText = totalStr;
-            document.getElementById('totalImpressao').innerText = totalStr;
-            document.getElementById('tabelaItens').innerHTML = pedido.map(i => `<tr><td style="padding:5px 0; border-bottom:1px solid #eee;">${i.n}</td><td style="text-align:right;">R$ ${i.p.toFixed(2)}</td></tr>`).join('');
-            document.getElementById("qrcode-tela").innerHTML = "";
-            new QRCode(document.getElementById("qrcode-tela"), { text: payload, width: 200, height: 200 });
-            document.getElementById('tela-pagamento').style.display = 'block';
-        }
-
-        function imprimirEFechar() {
-            vendas.push(...pedido);
-            localStorage.setItem('dony_v', JSON.stringify(vendas));
-            window.print();
-            document.getElementById('tela-pagamento').style.display = 'none';
-            pedido = []; 
-            atualizar();
-        }
-
-        function adicionarLanche() {
-            const n = document.getElementById('novoNome').value;
-            const p = parseFloat(document.getElementById('novoPreco').value);
-            if(n && p) { extras.push({nome:n, preco:p}); localStorage.setItem('dony_ex', JSON.stringify(extras)); renderizar(); }
-        }
-
-        function verRelatorio() { 
-            let t = vendas.reduce((acc, i) => acc + (i.p || i.preco), 0);
-            alert("TOTAL DE VENDAS HOJE: R$ " + t.toFixed(2).replace('.',',')); 
-        }
-
-        renderizar();
     </script>
 </body>
 </html>
