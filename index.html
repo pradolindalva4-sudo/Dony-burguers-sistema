@@ -133,9 +133,29 @@
             localStorage.setItem('dony_vendas_anotadas', JSON.stringify(historicoVendas));
 
             const encoder = new TextEncoder();
-            let t = "\x1Ba\x01\x1BE\x01DONY BURGUER'S\n\x1BE\x00JOSE DIVINO - ENG\n--------------------------------\n\x1Ba\x00";
-            pedido.forEach(i => { t += `${i.n.padEnd(20)} R$ ${i.p.toFixed(2)}\n`; });
-            t += "--------------------------------\n\x1Ba\x01\x1BE\x01TOTAL: R$ " + totalV + "\n\n\n\n\n";
+            const ESC = '\x1B', GS = '\x1D';
+            const Reset = ESC + '@', BoldOn = ESC + 'E' + '\x01', BoldOff = ESC + 'E' + '\x00';
+            const Center = ESC + 'a' + '\x01', Left = ESC + 'a' + '\x00';
+            const DoubleSize = GS + '!' + '\x11', NormalSize = GS + '!' + '\x00';
+
+            let t = Reset + Center + BoldOn + "DONY BURGUER'S\n" + NormalSize;
+            t += "JOSE DIVINO PRADO DA LAPA\n" + "ENGENHEIRO SENIOR\n";
+            t += "--------------------------------\n" + BoldOff + Left;
+            
+            pedido.forEach(i => {
+                let linha = i.n.substring(0, 18).padEnd(20) + "R$" + i.p.toFixed(2).padStart(7);
+                t += linha + "\n";
+            });
+
+            t += "--------------------------------\n" + Center + BoldOn + DoubleSize;
+            t += "TOTAL: " + document.getElementById('totalDisplay').innerText + "\n" + NormalSize;
+            t += "--------------------------------\n" + BoldOn + "PAGAMENTO PIX\n" + BoldOff;
+            t += "Chave: " + CHAVE_PIX_TEXTO + "\n";
+            t += "Jose Divino Prado da Lapa\n";
+            t += "--------------------------------\n";
+            t += "Obrigado pela preferência!\n";
+            t += "Volte Sempre!\n\n\n\n\n";
+
 
             const dados = encoder.encode(t);
             for (let i = 0; i < dados.length; i += 20) { await caracteristicaImpressora.writeValue(dados.slice(i, i + 20)); }
