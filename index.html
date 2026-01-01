@@ -3,119 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DONY BURGUER'S - SISTEMA OFICIAL</title>
+    <title>DONY BURGUER'S - OFICIAL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root { --gold: #f59e0b; --dark: #050b1a; --card: #111827; --green: #10b981; --red: #ef4444; }
         body { font-family: sans-serif; background: var(--dark); color: white; margin: 0; padding: 10px; }
         .botao-secreto { position: absolute; top: 0; left: 0; width: 80px; height: 80px; background: transparent; z-index: 1000; }
         .visor-total { background: #000; border: 2px solid var(--gold); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; }
         .visor-total strong { font-size: 34px; color: white; }
-        .btn-lanche { background: white; color: #000; border: none; padding: 18px; border-radius: 8px; font-weight: bold; width: 75%; text-align: left; }
-        .btn-carrinho-x { background: var(--red); color: white; border: none; width: 20%; padding: 18px; border-radius: 8px; font-weight: bold; float: right; }
+        .btn-lanche { background: white; color: #000; border: none; padding: 18px; border-radius: 8px; font-weight: bold; width: 75%; text-align: left; margin-bottom: 10px; }
+        .btn-cancelar { background: var(--red); color: white; border: none; width: 20%; padding: 18px; border-radius: 8px; font-weight: bold; float: right; }
         #painel-admin { display: none; background: #1f2937; border: 2px solid var(--gold); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
+        
+        /* PLANILHA IMPERIAL */
+        #bloco-anotacoes { 
+            display: none; background: white; color: black; padding: 20px; border-radius: 8px; 
+            position: relative; overflow: hidden; border: 2px solid #ccc;
+        }
+        .marca-dagua { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 30px; color: rgba(0,0,0,0.1); font-weight: bold; white-space: nowrap; pointer-events: none;
+        }
+        table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; background: transparent; }
+        th, td { border: 1px solid #999; padding: 6px; text-align: left; font-size: 11px; color: black; }
+        th { background: #ddd; }
+
         #tela-pagamento { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; text-align: center; padding-top: 40px; }
         .caixa-pagamento { background: #fff; color: #000; width: 85%; max-width: 320px; margin: 0 auto; padding: 20px; border-radius: 20px; border: 5px solid var(--gold); }
-        .item-gestao { display: flex; justify-content: space-between; background: #374151; padding: 8px; margin-top: 5px; border-radius: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div style="color: white; font-size: 10px; text-align: center; padding: 5px; font-weight: bold;">Criado e desenvolvido por José Divino Plata da Lapa Engenheiro sênio</div>
-    <div class="botao-secreto" onclick="abrirEscritorio()"></div>
-    <div class="no-print">
-        <div id="painel-admin">
-            <h3 style="color:var(--gold); text-align:center; margin-top:0;">GESTÃO DO CARDÁPIO</h3>
-            <button onclick="conectarImpressora()" style="width:100%; background: #3b82f6; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; margin-bottom:15px;">🔌 CONECTAR IMPRESSORA</button>
-            <input type="text" id="novoNome" style="width:92%; padding:10px; margin-bottom:5px;" placeholder="Nome do Lanche">
-            <input type="number" id="novoPreco" style="width:92%; padding:10px; margin-bottom:10px;" placeholder="Preço R$">
-            <button onclick="adicionarAoCardapio()" style="width:100%; background:var(--green); color:white; padding:12px; border:none; border-radius:8px; font-weight:bold;">➕ ADICIONAR ITEM NOVO</button>
-            <div id="lista-gestao" style="margin-top:15px; max-height: 150px; overflow-y: auto; border-top: 1px solid #4b5563; padding-top: 10px;"></div>
-            <button onclick="document.getElementById('painel-admin').style.display='none'" style="background:gray; color:white; width:100%; padding:8px; border:none; border-radius:8px; margin-top:10px;">FECHAR PAINEL</button>
-        </div>
-        <div class="visor-total"><small style="color:var(--gold)">VALOR TOTAL</small><br><strong id="totalDisplay">R$ 0,00</strong></div>
-        <div id="listaBotoes"></div>
-        <button onclick="finalizarPedido()" style="background:var(--green); color:white; width:100%; padding:22px; border:none; border-radius:12px; font-weight:bold; font-size:18px; margin-top:15px;">CONCLUIR PEDIDO</button>
+
+    <div style="color: white; font-size: 10px; text-align: center; padding: 5px; font-weight: bold;">
+        Criado e desenvolvido por José Divino Plata da Lapa Engenheiro sênio
     </div>
+
+    <div class="botao-secreto" onclick="abrirEscritorio()"></div>
+
+    <div id="painel-admin">
+        <h3 style="color:var(--gold); text-align:center;">ESCRITÓRIO TÉCNICO</h3>
+        <button onclick="conectarImpressora()" style="width:100%; background: #3b82f6; color:white; padding:15px; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">🔌 CONECTAR IMPRESSORA</button>
+        <button onclick="toggleAnotacoes()" style="width:100%; background: var(--gold); color:black; padding:15px; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px;">📝 ANOTAÇÕES (PLANILHA)</button>
+
+        <div id="secao-anotacoes" style="display:none; margin-bottom: 15px;">
+            <div id="bloco-anotacoes">
+                <div class="marca-dagua">Dony-burguers</div>
+                <h4 style="text-align:center; margin:0;">VENDAS REGISTRADAS</h4>
+                <table id="tabela-vendas">
+                    <thead><tr><th>DATA</th><th>ITENS</th><th>TOTAL</th></tr></thead>
+                    <tbody id="corpo-anotacoes"></tbody>
+                </table>
+            </div>
+            <div style="display:flex; gap:5px; margin-top:10px;">
+                <button onclick="compartilharFoto()" style="flex:1; background:var(--green); color:white; padding:10px; border:none; border-radius:5px; font-weight:bold;">📸 FOTO</button>
+                <button onclick="limparAnotacoes()" style="flex:1; background:var(--red); color:white; padding:10px; border:none; border-radius:5px; font-weight:bold;">🗑️ ZERAR</button>
+            </div>
+        </div>
+
+        <button onclick="document.getElementById('painel-admin').style.display='none'" style="background:gray; color:white; width:100%; padding:8px; border:none; border-radius:8px; margin-top:10px;">VOLTAR AO MENU</button>
+    </div>
+
+    <div class="visor-total">
+        <small style="color:var(--gold)">VALOR TOTAL</small><br>
+        <strong id="totalDisplay">R$ 0,00</strong>
+    </div>
+
+    <div id="listaBotoes"></div>
+    <button onclick="finalizarPedido()" style="background:var(--green); color:white; width:100%; padding:22px; border:none; border-radius:12px; font-weight:bold; font-size:18px; margin-top:10px;">CONCLUIR PEDIDO</button>
+
     <div id="tela-pagamento">
         <div class="caixa-pagamento">
             <h3 style="margin:0; color:#333;">PAGAMENTO PIX</h3>
             <div id="qrcode-tela" style="margin: 15px 0; display: flex; justify-content: center;"></div>
             <p id="valorTela" style="font-weight:bold; font-size:22px; color:#d4af37; margin:5px 0;"></p>
-            <button id="btnImprimir" onclick="imprimirDireto()" style="background:var(--green); color:white; width:100%; padding:18px; border:none; border-radius:10px; font-weight:bold; font-size:16px;">IMPRIMIR COMPROVANTE</button>
-            <button onclick="fecharPagamentoSeguro()" style="background:#eee; color:#333; width:100%; padding:10px; border:none; border-radius:10px; margin-top:10px;">VOLTAR</button>
+            <button onclick="imprimirComprovanteImperial()" style="background:var(--green); color:white; width:100%; padding:18px; border:none; border-radius:10px; font-weight:bold; font-size:16px;">IMPRIMIR COMANDA</button>
+            <button onclick="document.getElementById('tela-pagamento').style.display='none'" style="background:#eee; color:#333; width:100%; padding:10px; border:none; border-radius:10px; margin-top:10px;">VOLTAR</button>
         </div>
     </div>
+
     <script>
         const _S = "drkling2025";
-        const CHAVE_PIX = "00020126580014br.gov.bcb.pix013643a6f5e6-2934-495f-a96c-f7eaf67d28da5204000053039865802BR5925JOSE DIVINO PRADO DA LAPA6009SAO PAULO62580520SAN2026010115161607950300017br.gov.bcb.brcode01051.0.06304A53A";
-        let cardapio = JSON.parse(localStorage.getItem('cardapio_dony')) || [{n:"Kikão",p:6.00}, {n:"X salada",p:10.00}, {n:"Pastel",p:3.00}];
-        let pedido = [], caractImp = null;
-
-        function abrirEscritorio() { if(prompt("ACESSO ADMINISTRADOR:") === _S) { document.getElementById('painel-admin').style.display='block'; atualizarGestao(); } }
-        function fecharPagamentoSeguro() { if(prompt("SENHA PARA CANCELAR:") === _S) document.getElementById('tela-pagamento').style.display='none'; }
+        const CHAVE_PIX_BRCODE = "00020126330014br.gov.bcb.pix0111709458872055204000053039865802BR5925JOSE DIVINO PRADO DA LAPA6009SAO PAULO62580520SAN2025123021490241450300017br.gov.bcb.brcode01051.0.0630408F2";
         
-        async function conectarImpressora() {
-            try {
-                const disp = await navigator.bluetooth.requestDevice({ filters: [{ namePrefix: '58' }, { namePrefix: 'MPT' }, { namePrefix: 'Bluetooth' }], optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] });
-                const serv = await (await disp.gatt.connect()).getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-                const caracts = await serv.getCharacteristics();
-                caractImp = caracts.find(c => c.properties.write || c.properties.writeWithoutResponse);
-                alert("IMPRESSORA PRONTA!");
-            } catch (e) { alert("Ligue o Bluetooth."); }
+        let PRODUTOS_INICIAIS = [{n:"Kikão",p:6.00}, {n:"X salada",p:10.00}, {n:"Pastel",p:3.00}];
+        let extras = JSON.parse(localStorage.getItem('dony_ex')) || [];
+        let historicoVendas = JSON.parse(localStorage.getItem('dony_vendas_anotadas')) || [];
+        let pedido = [];
+        let caracteristicaImpressora = null;
+
+        function abrirEscritorio() { if(prompt("SENHA:") === _S) document.getElementById('painel-admin').style.display='block'; }
+
+        function toggleAnotacoes() {
+            const sec = document.getElementById('secao-anotacoes');
+            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+            document.getElementById('bloco-anotacoes').style.display = 'block';
+            atualizarTabelaAnotacoes();
         }
 
-        async function imprimirDireto() {
-            if (!caractImp) return alert("Conecte a impressora primeiro!");
-            const encoder = new TextEncoder(), ESC = '\x1B', GS = '\x1D', Cent = ESC + 'a' + '\x01', Esq = ESC + 'a' + '\x00', B1 = ESC + 'E' + '\x01', B0 = ESC + 'E' + '\x00', Res = ESC + '@';
-            
-            let t = Res + Cent + B1 + "JOSE DIVINO - ENG. SENIOR\n" + "DONY BURGUER\n" + "--------------------------------\n" + B0 + Esq;
-            pedido.forEach(i => { t += `${i.n.padEnd(18)} R$ ${i.p.toFixed(2)}\n`; });
-            t += "--------------------------------\n" + Cent + B1 + `TOTAL: ${document.getElementById('totalDisplay').innerText}\n\n`;
-            
-            // COMANDOS DO QR CODE PARA A IMPRESSORA
-            t += B0 + "PAGUE PELO QR CODE ABAIXO:\n";
-            t += GS + "(k\x03\x001C\x08"; // Define o tamanho bacana
-            t += GS + "(k\x03\x001E\x00"; // Correção de erro
-            t += GS + "(k" + String.fromCharCode(CHAVE_PIX.length + 3) + "\x001P0" + CHAVE_PIX; // Envia a Chave
-            t += GS + "(k\x03\x001Q0"; // Imprime o QR
-            
-            t += "\n\nVOLTE SEMPRE!\n\n\n\n\n";
+        function atualizarTabelaAnotacoes() {
+            const corpo = document.getElementById('corpo-anotacoes');
+            corpo.innerHTML = historicoVendas.map(v => `<tr><td>${v.data}</td><td>${v.itens}</td><td>R$ ${v.total}</td></tr>`).join('');
+        }
 
+        async function conectarImpressora() {
             try {
-                const dados = encoder.encode(t);
-                for (let i = 0; i < dados.length; i += 20) {
-                    await caractImp.writeValue(dados.slice(i, i + 20));
-                    await new Promise(r => setTimeout(r, 50)); 
-                }
-                pedido = []; atualizar(); document.getElementById('tela-pagamento').style.display = 'none';
-            } catch (e) { alert("Erro de impressão."); }
+                const disp = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: '58' }, { namePrefix: 'MPT' }, { namePrefix: 'Bluetooth' }],
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
+                });
+                const servidor = await disp.gatt.connect();
+                const servico = await servidor.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+                const caracts = await servico.getCharacteristics();
+                caracteristicaImpressora = caracts.find(c => c.properties.write || c.properties.writeWithoutResponse);
+                alert("CONECTADO!");
+            } catch (e) { alert("Erro de conexão. Ligue o GPS/Bluetooth."); }
+        }
+
+        async function imprimirComprovanteImperial() {
+            if (!caracteristicaImpressora) return alert("Conecte a impressora primeiro no painel técnico!");
+
+            // SÓ SALVA SE IMPRIMIR
+            const agora = new Date();
+            const dataF = agora.getHours() + ":" + agora.getMinutes();
+            const totalV = document.getElementById('totalDisplay').innerText.replace("R$ ", "");
+            const itensV = pedido.map(i => i.n).join(", ");
+            
+            historicoVendas.push({ data: dataF, itens: itensV, total: totalV });
+            localStorage.setItem('dony_vendas_anotadas', JSON.stringify(historicoVendas));
+
+            const encoder = new TextEncoder();
+            let t = "\x1Ba\x01\x1BE\x01DONY BURGUER'S\n\x1BE\x00JOSE DIVINO - ENG\n--------------------------------\n\x1Ba\x00";
+            pedido.forEach(i => { t += `${i.n.padEnd(20)} R$ ${i.p.toFixed(2)}\n`; });
+            t += "--------------------------------\n\x1Ba\x01\x1BE\x01TOTAL: R$ " + totalV + "\n\n\n\n\n";
+
+            const dados = encoder.encode(t);
+            for (let i = 0; i < dados.length; i += 20) { await caracteristicaImpressora.writeValue(dados.slice(i, i + 20)); }
+            
+            pedido = []; atualizar();
+            document.getElementById('tela-pagamento').style.display = 'none';
+        }
+
+        function compartilharFoto() {
+            html2canvas(document.getElementById('bloco-anotacoes')).then(canvas => {
+                canvas.toBlob(blob => {
+                    const file = new File([blob], "vendas-dony.png", { type: "image/png" });
+                    if (navigator.share) navigator.share({ files: [file], title: 'Relatório Dony' });
+                    else alert("Navegador não suporta compartilhamento de foto.");
+                });
+            });
+        }
+
+        function limparAnotacoes() {
+            if(prompt("SENHA PARA ZERAR:") === _S) {
+                historicoVendas = [];
+                localStorage.setItem('dony_vendas_anotadas', "[]");
+                atualizarTabelaAnotacoes();
+            }
         }
 
         function renderizar() {
-            document.getElementById('listaBotoes').innerHTML = cardapio.map(i => `<div style="margin-bottom:10px; display:flex; gap:5px;"><button class="btn-lanche" onclick="add('${i.n}', ${i.p})">${i.n} - R$ ${i.p.toFixed(2)}</button><button class="btn-carrinho-x" onclick="remPed('${i.n}')">X</button></div>`).join('');
+            const lista = [...PRODUTOS_INICIAIS, ...extras];
+            document.getElementById('listaBotoes').innerHTML = lista.map(i => `
+                <div style="margin-bottom:10px; display:flex; gap:5px;">
+                    <button class="btn-lanche" onclick="add('${i.n || i.nome}', ${i.p || i.preco})">${i.n || i.nome} - R$ ${(i.p || i.preco).toFixed(2)}</button>
+                    <button class="btn-cancelar" onclick="removerCarrinho('${i.n || i.nome}')">X</button>
+                </div>
+            `).join('');
         }
 
-        function atualizarGestao() {
-            document.getElementById('lista-gestao').innerHTML = cardapio.map((i, idx) => `<div class="item-gestao"><span>${i.n}</span><button onclick="removerDoCardapio(${idx})" style="background:none; border:none; color:var(--red); font-weight:bold;">EXCLUIR</button></div>`).join('');
-        }
-
-        function adicionarAoCardapio() {
-            const n = document.getElementById('novoNome').value, p = parseFloat(document.getElementById('novoPreco').value);
-            if(n && p) { cardapio.push({n, p}); localStorage.setItem('cardapio_dony', JSON.stringify(cardapio)); renderizar(); atualizarGestao(); document.getElementById('novoNome').value = ''; document.getElementById('novoPreco').value = ''; }
-        }
-
-        function removerDoCardapio(idx) { if(confirm("Remover item?")) { cardapio.splice(idx, 1); localStorage.setItem('cardapio_dony', JSON.stringify(cardapio)); renderizar(); atualizarGestao(); } }
         function add(n, p) { pedido.push({n, p}); atualizar(); }
-        function remPed(n) { if(prompt("SENHA ADMIN:") === _S) { const idx = pedido.findIndex(it => it.n === n); if(idx > -1) { pedido.splice(idx, 1); atualizar(); } } }
-        function atualizar() { let t = pedido.reduce((acc, i) => acc + i.p, 0); document.getElementById('totalDisplay').innerText = `R$ ${t.toFixed(2).replace('.',',')}`; }
-        
+        function atualizar() {
+            let t = pedido.reduce((acc, i) => acc + i.p, 0);
+            document.getElementById('totalDisplay').innerText = `R$ ${t.toFixed(2).replace('.',',')}`;
+        }
         function finalizarPedido() {
             if(!pedido.length) return;
             document.getElementById('valorTela').innerText = document.getElementById('totalDisplay').innerText;
             document.getElementById("qrcode-tela").innerHTML = "";
-            new QRCode(document.getElementById("qrcode-tela"), { text: CHAVE_PIX, width: 200, height: 200 });
+            new QRCode(document.getElementById("qrcode-tela"), { text: CHAVE_PIX_BRCODE, width: 180, height: 180 });
             document.getElementById('tela-pagamento').style.display = 'block';
         }
+        function removerCarrinho(n) { if(prompt("SENHA ADMIN:") === _S) { const idx = pedido.findIndex(it => it.n === n); if(idx > -1) { pedido.splice(idx, 1); atualizar(); } } }
+
         renderizar();
     </script>
 </body>
